@@ -110,38 +110,34 @@ export default function App() {
 
   // Load data
   useEffect(() => {
-    const load = async () => {
-      try {
-        const todayResult = await window.storage.get(STORAGE_PREFIX + "day-" + todayKey);
-        if (todayResult) setDayData(JSON.parse(todayResult.value));
-      } catch {}
-      try {
-        const suppResult = await window.storage.get(STORAGE_PREFIX + "custom-supps");
-        if (suppResult) setCustomSupplements(JSON.parse(suppResult.value));
-      } catch {}
-      // Load history
-      try {
-        const keys = await window.storage.list(STORAGE_PREFIX + "day-");
-        const hist = {};
-        if (keys && keys.keys) {
-          for (const key of keys.keys) {
-            try {
-              const r = await window.storage.get(key);
-              if (r) hist[key.replace(STORAGE_PREFIX + "day-", "")] = JSON.parse(r.value);
-            } catch {}
-          }
+    try {
+      const val = localStorage.getItem(STORAGE_PREFIX + "day-" + todayKey);
+      if (val) setDayData(JSON.parse(val));
+    } catch {}
+    try {
+      const val = localStorage.getItem(STORAGE_PREFIX + "custom-supps");
+      if (val) setCustomSupplements(JSON.parse(val));
+    } catch {}
+    try {
+      const hist = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX + "day-")) {
+          try {
+            const val = localStorage.getItem(key);
+            if (val) hist[key.replace(STORAGE_PREFIX + "day-", "")] = JSON.parse(val);
+          } catch {}
         }
-        setHistory(hist);
-      } catch {}
-      setLoaded(true);
-    };
-    load();
+      }
+      setHistory(hist);
+    } catch {}
+    setLoaded(true);
   }, []);
 
   // Save today
   useEffect(() => {
     if (!loaded) return;
-    window.storage.set(STORAGE_PREFIX + "day-" + todayKey, JSON.stringify(dayData)).catch(() => {});
+    try { localStorage.setItem(STORAGE_PREFIX + "day-" + todayKey, JSON.stringify(dayData)); } catch {}
     setHistory(prev => ({ ...prev, [todayKey]: dayData }));
   }, [dayData, loaded]);
 
@@ -158,7 +154,7 @@ export default function App() {
     const updated = [...customSupplements, newSupp.trim()];
     setCustomSupplements(updated);
     setNewSupp("");
-    try { await window.storage.set(STORAGE_PREFIX + "custom-supps", JSON.stringify(updated)); } catch {}
+    try { localStorage.setItem(STORAGE_PREFIX + "custom-supps", JSON.stringify(updated)); } catch {}
   };
 
   const allSupplements = [...SUPPLEMENTS_DEFAULT, ...customSupplements];
